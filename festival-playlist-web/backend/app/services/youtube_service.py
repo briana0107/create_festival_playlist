@@ -33,6 +33,7 @@ BAD_KEYWORDS = [
 ]
 GOOD_KEYWORDS = ["official", "live", "festival", "mv", "music video", "performance"]
 SEARCH_PAGE_SIZE = 50
+MAX_SEARCH_RESULTS_PER_ARTIST = 70
 
 
 def build_auth_url():
@@ -176,7 +177,10 @@ def _search_candidates(service, query):
             request["pageToken"] = page_token
 
         search_response = service.search().list(**request).execute()
-        items.extend(search_response.get("items", []))
+        remaining = MAX_SEARCH_RESULTS_PER_ARTIST - len(items)
+        items.extend(search_response.get("items", [])[:remaining])
+        if len(items) >= MAX_SEARCH_RESULTS_PER_ARTIST:
+            break
 
         page_token = search_response.get("nextPageToken")
         if not page_token:
