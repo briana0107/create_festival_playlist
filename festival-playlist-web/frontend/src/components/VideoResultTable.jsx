@@ -41,6 +41,8 @@ export default function VideoResultTable({
             <th>Video ID</th>
             <th>제목</th>
             <th>채널</th>
+            <th>등록일</th>
+            <th>조회수</th>
             <th>URL</th>
             <th>선택 이유</th>
             <th>사용</th>
@@ -86,6 +88,12 @@ export default function VideoResultTable({
                 <input value={item.channel_title || ""} onChange={(event) => update(index, "channel_title", event.target.value)} />
               </td>
               <td>
+                <span className="meta-value">{formatPublishedDate(item.published_at)}</span>
+              </td>
+              <td>
+                <span className="meta-value numeric">{formatViewCount(item.view_count)}</span>
+              </td>
+              <td>
                 <div className="url-cell">
                   <input value={item.video_url || ""} onChange={(event) => update(index, "video_url", event.target.value)} />
                   {item.video_url ? (
@@ -117,4 +125,16 @@ export default function VideoResultTable({
       </table>
     </div>
   );
+}
+
+function formatPublishedDate(value) {
+  if (!value) return "-";
+  return String(value).slice(0, 10) || "-";
+}
+
+function formatViewCount(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  return new Intl.NumberFormat("ko-KR").format(number);
 }

@@ -1,4 +1,5 @@
 import logging
+import html
 import os
 import re
 
@@ -31,7 +32,7 @@ BAD_KEYWORDS = [
     "fanmade",
 ]
 GOOD_KEYWORDS = ["official", "live", "festival", "mv", "music video", "performance"]
-SEARCH_RESULTS_PER_ARTIST = 20
+SEARCH_PAGE_SIZE = 50
 
 
 def build_auth_url():
@@ -159,55 +160,80 @@ def _youtube_oauth_service(session_id):
 
 
 def _search_candidates(service, query):
-    search_response = service.search().list(
-        part="snippet",
-        q=query,
-        type="video",
-        maxResults=SEARCH_RESULTS_PER_ARTIST,
-        safeSearch="none",
-        videoEmbeddable="true",
-    ).execute()
+    items = []
+    page_token = None
 
-    items = search_response.get("items", [])
+    while True:
+        request = {
+            "part": "snippet",
+            "q": query,
+            "type": "video",
+            "maxResults": SEARCH_PAGE_SIZE,
+            "safeSearch": "none",
+            "videoEmbeddable": "true",
+        }
+        if page_token:
+            request["pageToken"] = page_token
+
+        search_response = service.search().list(**request).execute()
+        items.extend(search_response.get("items", []))
+
+        page_token = search_response.get("nextPageToken")
+        if not page_token:
+            break
+
     video_ids = [
         item.get("id", {}).get("videoId")
         for item in items
         if item.get("id", {}).get("videoId")
     ]
-    durations = _video_durations(service, video_ids)
+    video_details = _video_details(service, video_ids)
 
     candidates = []
     for item in items:
         video_id = item.get("id", {}).get("videoId")
         snippet = item.get("snippet", {})
+        details = video_details.get(video_id, {})
         if not video_id:
             continue
         candidates.append(
             {
                 "video_id": video_id,
-                "video_title": snippet.get("title") or "",
-                "channel_title": snippet.get("channelTitle") or "",
+                "video_title": _clean_text(details.get("video_title") or snippet.get("title") or ""),
+                "channel_title": _clean_text(details.get("channel_title") or snippet.get("channelTitle") or ""),
+                "published_at": details.get("published_at") or snippet.get("publishedAt") or "",
+                "view_count": details.get("view_count"),
                 "video_url": "https://www.youtube.com/watch?v=%s" % video_id,
-                "duration_seconds": durations.get(video_id),
+                "duration_seconds": details.get("duration_seconds"),
             }
         )
-    return candidates
+    return _dedupe_candidates_by_title(candidates)
 
 
-def _video_durations(service, video_ids):
+def _video_details(service, video_ids):
     if not video_ids:
         return {}
-    response = service.videos().list(
-        part="contentDetails",
-        id=",".join(video_ids),
-    ).execute()
 
-    durations = {}
-    for item in response.get("items", []):
-        video_id = item.get("id")
-        duration = item.get("contentDetails", {}).get("duration")
-        durations[video_id] = _parse_iso8601_duration(duration)
-    return durations
+    details = {}
+    for batch in _chunks(_unique(video_ids), 50):
+        response = service.videos().list(
+            part="contentDetails,snippet,statistics",
+            id=",".join(batch),
+        ).execute()
+
+        for item in response.get("items", []):
+            video_id = item.get("id")
+            duration = item.get("contentDetails", {}).get("duration")
+            snippet = item.get("snippet", {})
+            statistics = item.get("statistics", {})
+            details[video_id] = {
+                "video_title": snippet.get("title") or "",
+                "channel_title": snippet.get("channelTitle") or "",
+                "published_at": snippet.get("publishedAt") or "",
+                "view_count": _parse_int(statistics.get("viewCount")),
+                "duration_seconds": _parse_iso8601_duration(duration),
+            }
+    return details
 
 
 def _select_candidates(artist_name, query, candidates):
@@ -244,7 +270,7 @@ def _select_candidates(artist_name, query, candidates):
             scored.append((score, candidate, reason_parts))
 
     if scored:
-        scored.sort(key=lambda value: value[0], reverse=True)
+        scored.sort(key=lambda value: (value[0], _view_count_value(value[1])), reverse=True)
         return [
             {
                 "artist_name": artist_name,
@@ -252,11 +278,13 @@ def _select_candidates(artist_name, query, candidates):
                 "video_id": candidate["video_id"],
                 "video_title": candidate["video_title"],
                 "channel_title": candidate["channel_title"],
+                "published_at": candidate.get("published_at") or "",
+                "view_count": candidate.get("view_count"),
                 "video_url": candidate["video_url"],
                 "reason": ", ".join(reason_parts) if reason_parts else "search candidate",
                 "approved": score >= 4,
             }
-            for score, candidate, reason_parts in scored[:SEARCH_RESULTS_PER_ARTIST]
+            for score, candidate, reason_parts in scored
         ]
 
     fallback = candidates[0] if candidates else None
@@ -268,6 +296,8 @@ def _select_candidates(artist_name, query, candidates):
                 "video_id": fallback["video_id"],
                 "video_title": fallback["video_title"],
                 "channel_title": fallback["channel_title"],
+                "published_at": fallback.get("published_at") or "",
+                "view_count": fallback.get("view_count"),
                 "video_url": fallback["video_url"],
                 "reason": "fallback candidate; review manually",
                 "approved": False,
@@ -281,6 +311,8 @@ def _select_candidates(artist_name, query, candidates):
             "video_id": "",
             "video_title": "",
             "channel_title": "",
+            "published_at": "",
+            "view_count": None,
             "video_url": "",
             "reason": "no candidate found",
             "approved": False,
@@ -302,6 +334,59 @@ def _is_bad_candidate(normalized, duration_seconds):
 
 def _tokens(value):
     return [token for token in re.split(r"\s+", value.lower().strip()) if token]
+
+
+def _dedupe_candidates_by_title(candidates):
+    best_by_title = {}
+    untitled = []
+
+    for candidate in candidates:
+        title_key = _normalize_title(candidate.get("video_title"))
+        if not title_key:
+            untitled.append(candidate)
+            continue
+
+        current = best_by_title.get(title_key)
+        if current is None or _view_count_value(candidate) > _view_count_value(current):
+            best_by_title[title_key] = candidate
+
+    return list(best_by_title.values()) + untitled
+
+
+def _normalize_title(value):
+    text = _clean_text(value).lower()
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _clean_text(value):
+    return html.unescape(str(value or "")).strip()
+
+
+def _view_count_value(candidate):
+    view_count = candidate.get("view_count")
+    return view_count if isinstance(view_count, int) else -1
+
+
+def _parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _unique(values):
+    seen = set()
+    unique_values = []
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            unique_values.append(value)
+    return unique_values
+
+
+def _chunks(values, size):
+    for index in range(0, len(values), size):
+        yield values[index : index + size]
 
 
 def _parse_iso8601_duration(value):

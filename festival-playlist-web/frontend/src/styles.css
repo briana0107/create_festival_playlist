@@ -566,11 +566,11 @@ textarea:focus {
 }
 
 .video-table {
-  min-width: 1320px;
+  min-width: 1500px;
 }
 
 .compact-video-table {
-  min-width: 1040px;
+  min-width: 1220px;
 }
 
 .data-table th,
@@ -598,6 +598,23 @@ textarea:focus {
 .data-table input {
   min-width: 0;
   padding: 8px 9px;
+}
+
+.meta-value {
+  display: block;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfb;
+  color: var(--muted);
+  padding: 8px 9px;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.meta-value.numeric {
+  text-align: right;
 }
 
 .strong-input {

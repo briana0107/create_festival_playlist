@@ -89,7 +89,7 @@ http://localhost:5173
 
 OpenAI API Key는 Backend `.env`의 `OPENAI_API_KEY`에 넣습니다. 프론트엔드는 OpenAI API Key를 입력받거나 저장하지 않습니다.
 
-YouTube 검색 API Key는 Backend `.env`의 `YOUTUBE_API_KEY`에 넣습니다. 프론트엔드는 YouTube 검색 API Key를 입력받거나 저장하지 않습니다. 영상 검색은 승인된 아티스트마다 `official music video` 기준으로 최대 20개 후보를 가져오고, 검수 화면에서 아티스트 탭별로 사용할 영상을 선택합니다.
+YouTube 검색 API Key는 Backend `.env`의 `YOUTUBE_API_KEY`에 넣습니다. 프론트엔드는 YouTube 검색 API Key를 입력받거나 저장하지 않습니다. 영상 검색은 승인된 아티스트마다 `official music video` 기준으로 YouTube Search API가 반환하는 페이지를 끝까지 가져오고, 제목이 같은 후보는 조회수가 가장 높은 영상만 남깁니다. 검수 화면에서는 아티스트 탭별로 조회수와 등록일을 보며 사용할 영상을 선택합니다.
 
 ## Data Retention Model
 
