@@ -16,6 +16,7 @@ export default function VideoReviewPage({
   const usableCount = items.filter((item) => item.approved && item.video_id).length;
   const artistGroups = useMemo(() => groupVideosByArtist(items), [items]);
   const [activeArtist, setActiveArtist] = useState("");
+  const [topByViewLimit, setTopByViewLimit] = useState("manual");
   const activeGroup =
     artistGroups.find((group) => group.artistName === activeArtist) || artistGroups[0] || null;
 
@@ -31,6 +32,35 @@ export default function VideoReviewPage({
 
   function setApproval(approved) {
     setItems(items.map((item) => ({ ...item, approved })));
+    setTopByViewLimit("manual");
+  }
+
+  function applyTopByViewsPerArtist(value) {
+    setTopByViewLimit(value);
+
+    if (value === "manual") return;
+    if (value === "all") {
+      setItems(items.map((item) => ({ ...item, approved: Boolean(item.video_id) })));
+      return;
+    }
+
+    const limit = Number(value);
+    const approvedIndexes = new Set();
+
+    groupVideosByArtist(items).forEach((group) => {
+      group.items
+        .filter((entry) => entry.item.video_id)
+        .sort((left, right) => viewCountValue(right.item) - viewCountValue(left.item))
+        .slice(0, limit)
+        .forEach((entry) => approvedIndexes.add(entry.index));
+    });
+
+    setItems(
+      items.map((item, index) => ({
+        ...item,
+        approved: approvedIndexes.has(index),
+      })),
+    );
   }
 
   function updateActiveGroup(nextGroupItems) {
@@ -65,6 +95,18 @@ export default function VideoReviewPage({
         <div className="toolbar">
           <span className="status-pill">{approvedCount}개 승인</span>
           <span className="status-pill">{usableCount}개 생성 대상</span>
+          <label className="toolbar-select">
+            <span>가수별 조회수 상위</span>
+            <select value={topByViewLimit} onChange={(event) => applyTopByViewsPerArtist(event.target.value)} disabled={!items.length}>
+              <option value="manual">수동</option>
+              <option value="all">전체</option>
+              <option value="5">5개</option>
+              <option value="10">10개</option>
+              <option value="20">20개</option>
+              <option value="30">30개</option>
+              <option value="50">50개</option>
+            </select>
+          </label>
           <button className="secondary-button compact" type="button" onClick={() => setApproval(true)} disabled={!items.length}>
             <CheckCheck size={16} aria-hidden="true" />
             <span>전체 선택</span>
@@ -163,4 +205,9 @@ function groupVideosByArtist(items) {
   });
 
   return Array.from(groupsByArtist.values());
+}
+
+function viewCountValue(item) {
+  const value = Number(item.view_count);
+  return Number.isFinite(value) ? value : -1;
 }

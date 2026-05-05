@@ -288,6 +288,34 @@ button:disabled {
   gap: 8px;
 }
 
+.toolbar-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfb;
+  padding: 0 8px 0 10px;
+}
+
+.toolbar-select span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.toolbar-select select {
+  width: auto;
+  min-width: 86px;
+  border: 0;
+  background: transparent;
+  padding: 7px 2px;
+  font-weight: 800;
+  box-shadow: none;
+}
+
 .review-summary {
   flex-wrap: wrap;
   gap: 8px;
