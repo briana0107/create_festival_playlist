@@ -1,10 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-export async function loadManualText({ text }) {
+export async function loadManualText({ text, date }) {
   return requestJson("/api/lineup/from-text", {
     method: "POST",
     headers: jsonHeaders(),
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, date }),
   });
 }
 

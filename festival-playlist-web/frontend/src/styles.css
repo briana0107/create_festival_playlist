@@ -607,6 +607,10 @@ textarea:focus {
   table-layout: fixed;
 }
 
+.lineup-table {
+  min-width: 720px;
+}
+
 .video-table {
   min-width: 1500px;
 }

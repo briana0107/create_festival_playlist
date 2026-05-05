@@ -1,12 +1,12 @@
 # Festival Playlist Web
 
-줄바꿈 텍스트에서 페스티벌 라인업을 만들고 검수한 뒤 아티스트별 YouTube 영상 후보를 검수하여 플레이리스트를 생성하는 MVP 웹앱입니다.
+일자와 줄바꿈 텍스트에서 페스티벌 라인업을 만들고 검수한 뒤 아티스트별 YouTube 영상 후보를 검수하여 플레이리스트를 생성하는 MVP 웹앱입니다.
 
 ## Architecture
 
 Frontend는 React + Vite 단일 페이지 앱입니다. 화면은 `Home -> Lineup Review -> Video Search Review -> Playlist Create` 순서로 이동하며, 요청 단위 선택 입력값은 브라우저 state에만 보관합니다. `localStorage`를 사용하지 않습니다.
 
-Backend는 FastAPI stateless API입니다. DB를 쓰지 않고, 줄바꿈 텍스트 파싱과 YouTube 연동을 요청 단위로 처리합니다.
+Backend는 FastAPI stateless API입니다. DB를 쓰지 않고, 일자/줄바꿈 텍스트 파싱과 YouTube 연동을 요청 단위로 처리합니다.
 
 YouTube OAuth 토큰은 `backend/app/services/token_store.py`의 프로세스 메모리에만 TTL로 보관합니다. 서버 재시작 시 토큰과 OAuth state는 모두 삭제됩니다.
 
@@ -103,6 +103,7 @@ Body:
 
 ```json
 {
+  "date": "2026-05-31",
   "text": "Artist A\nArtist B"
 }
 ```

@@ -1,15 +1,6 @@
 import { Trash2 } from "lucide-react";
 
-const COLUMNS = [
-  "날짜",
-  "일차",
-  "아티스트",
-  "스테이지",
-  "시작",
-  "신뢰도",
-  "사용",
-  "",
-];
+const COLUMNS = ["일자", "아티스트", "선택", ""];
 
 export default function LineupTable({ items, onChange }) {
   function update(index, key, value) {
@@ -26,7 +17,7 @@ export default function LineupTable({ items, onChange }) {
 
   return (
     <div className="table-wrap">
-      <table className="data-table">
+      <table className="data-table lineup-table">
         <thead>
           <tr>
             {COLUMNS.map((column) => (
@@ -39,15 +30,9 @@ export default function LineupTable({ items, onChange }) {
             <tr key={`${item.artist_name}-${index}`}>
               <td>
                 <input
+                  type="date"
                   value={item.date || ""}
                   onChange={(event) => update(index, "date", clean(event.target.value))}
-                  placeholder="YYYY-MM-DD"
-                />
-              </td>
-              <td>
-                <input
-                  value={item.day_label || ""}
-                  onChange={(event) => update(index, "day_label", clean(event.target.value))}
                 />
               </td>
               <td>
@@ -56,26 +41,6 @@ export default function LineupTable({ items, onChange }) {
                   value={item.artist_name || ""}
                   onChange={(event) => update(index, "artist_name", event.target.value)}
                   placeholder="아티스트"
-                />
-              </td>
-              <td>
-                <input value={item.stage || ""} onChange={(event) => update(index, "stage", clean(event.target.value))} />
-              </td>
-              <td>
-                <input
-                  value={item.start_time || ""}
-                  onChange={(event) => update(index, "start_time", clean(event.target.value))}
-                  placeholder="HH:mm"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={Number(item.confidence ?? 0)}
-                  onChange={(event) => update(index, "confidence", Number(event.target.value))}
                 />
               </td>
               <td className="check-cell">

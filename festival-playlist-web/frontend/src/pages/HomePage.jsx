@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { ListPlus, Sparkles } from "lucide-react";
+import { ListPlus } from "lucide-react";
 
 import { loadManualText } from "../api/client.js";
 import ManualArtistInput from "../components/ManualArtistInput.jsx";
 
 export default function HomePage({ festivalName, setFestivalName, onLineupLoaded, onError }) {
+  const [eventDate, setEventDate] = useState("");
   const [manualText, setManualText] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submitManual() {
+    if (!eventDate) return onError("일자를 입력해 주세요.");
     if (!manualText.trim()) return onError("아티스트 이름을 입력해 주세요.");
     await run(async () => {
-      const response = await loadManualText({ text: manualText });
+      const response = await loadManualText({ text: manualText, date: eventDate });
       onLineupLoaded(response.items);
     });
   }
@@ -45,6 +47,14 @@ export default function HomePage({ festivalName, setFestivalName, onLineupLoaded
             value={festivalName}
             onChange={(event) => setFestivalName(event.target.value)}
             placeholder="Seoul Jazz Festival"
+          />
+        </label>
+        <label className="field">
+          <span>일자</span>
+          <input
+            type="date"
+            value={eventDate}
+            onChange={(event) => setEventDate(event.target.value)}
           />
         </label>
       </div>

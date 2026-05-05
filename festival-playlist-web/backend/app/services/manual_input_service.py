@@ -4,10 +4,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def parse_manual_text(text):
+def parse_manual_text(text, date=None):
     if not text.strip():
         raise ValueError("Manual input is empty")
 
+    event_date = _nullable(date)
     seen = set()
     items = []
 
@@ -23,7 +24,7 @@ def parse_manual_text(text):
 
         items.append(
             {
-                "date": None,
+                "date": event_date,
                 "day_label": None,
                 "artist_name": artist_name,
                 "stage": None,
@@ -40,3 +41,9 @@ def parse_manual_text(text):
 
     return items
 
+
+def _nullable(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None

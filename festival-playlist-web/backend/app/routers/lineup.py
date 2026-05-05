@@ -17,11 +17,12 @@ async def from_text(request: Request):
         raise HTTPException(status_code=400, detail="Invalid JSON body")
 
     text = payload.get("text") if isinstance(payload, dict) else None
+    date = payload.get("date") if isinstance(payload, dict) else None
     if not isinstance(text, str):
         raise HTTPException(status_code=400, detail="text is required")
 
     try:
-        items = parse_manual_text(text)
+        items = parse_manual_text(text, date)
         logger.info("Manual lineup parsed with %s lineup items", len(items))
         return {"items": items}
     except ValueError as exc:

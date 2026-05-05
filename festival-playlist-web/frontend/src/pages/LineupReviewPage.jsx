@@ -6,13 +6,13 @@ export default function LineupReviewPage({ items, setItems, onBack, onNext }) {
   const approvedCount = items.filter((item) => item.approved).length;
   const searchableCount = items.filter((item) => item.approved && item.artist_name?.trim()).length;
   const incompleteCount = items.filter((item) => !item.artist_name?.trim()).length;
-  const lowConfidenceCount = items.filter((item) => Number(item.confidence ?? 1) < 0.7).length;
 
   function addArtist() {
+    const lastDate = [...items].reverse().find((item) => item.date)?.date || null;
     setItems([
       ...items,
       {
-        date: null,
+        date: lastDate,
         day_label: null,
         artist_name: "",
         stage: null,
@@ -57,7 +57,6 @@ export default function LineupReviewPage({ items, setItems, onBack, onNext }) {
         <span><strong>{items.length}</strong> 전체</span>
         <span><strong>{searchableCount}</strong> 검색 대상</span>
         <span><strong>{incompleteCount}</strong> 이름 누락</span>
-        <span><strong>{lowConfidenceCount}</strong> 낮은 신뢰도</span>
       </div>
 
       <LineupTable items={items} onChange={setItems} />

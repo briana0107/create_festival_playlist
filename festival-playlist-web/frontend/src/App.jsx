@@ -9,7 +9,7 @@ import PlaylistCreatePage from "./pages/PlaylistCreatePage.jsx";
 import workflowImage from "./assets/festival-workflow.png";
 
 const STEPS = [
-  { id: "home", label: "입력", description: "소스 선택", icon: UploadCloud },
+  { id: "home", label: "입력", description: "직접 입력", icon: UploadCloud },
   { id: "lineup", label: "라인업", description: "아티스트 검수", icon: ListChecks },
   { id: "videos", label: "영상", description: "후보 검수", icon: Search },
   { id: "playlist", label: "생성", description: "YouTube 저장", icon: Music2 },
@@ -50,6 +50,7 @@ export default function App() {
     { label: "영상 후보", value: videoItems.length },
     { label: "생성 대상", value: approvedVideoCount },
   ];
+  const displayFestivalName = festivalName.trim() || "페스티벌 이름 미입력";
 
   async function handleSearchVideos() {
     setBusy(true);
@@ -86,7 +87,10 @@ export default function App() {
             <Music2 size={18} aria-hidden="true" />
             <span>Festival Playlist Studio</span>
           </div>
-          <h1>페스티벌 라인업을 YouTube 플레이리스트로 정리</h1>
+          <div>
+            <p className="eyebrow">Festival</p>
+            <h1>{displayFestivalName}</h1>
+          </div>
           <div className="metrics" aria-label="Workflow summary">
             {stats.map((item) => (
               <span key={item.label}>
