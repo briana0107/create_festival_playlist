@@ -33,7 +33,7 @@ BAD_KEYWORDS = [
 ]
 GOOD_KEYWORDS = ["official", "live", "festival", "mv", "music video", "performance"]
 SEARCH_PAGE_SIZE = 50
-MAX_SEARCH_RESULTS_PER_ARTIST = 70
+MAX_SEARCH_RESULTS_PER_ARTIST = 50
 
 
 def build_auth_url():
