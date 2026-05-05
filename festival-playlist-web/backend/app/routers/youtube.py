@@ -4,6 +4,7 @@ import time
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from googleapiclient.errors import HttpError
 
 from app.services.playlist_job_store import create_job, get_job, update_job
 from app.services.youtube_service import (
@@ -41,6 +42,11 @@ async def search(request: Request):
         return {"items": videos}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except PermissionError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+    except HttpError as exc:
+        logger.exception("YouTube API search failed")
+        raise HTTPException(status_code=_http_error_status(exc), detail=_google_api_error_detail(exc))
     except Exception:
         logger.exception("YouTube search failed")
         raise HTTPException(status_code=502, detail="YouTube search failed")
@@ -165,3 +171,30 @@ def _run_create_playlist_job(job_id, session_id, playlist_name, privacy, videos)
             completed_at=time.time(),
             error=str(exc) or "Playlist creation failed",
         )
+
+
+def _http_error_status(exc):
+    status = getattr(getattr(exc, "resp", None), "status", None)
+    if isinstance(status, int) and 400 <= status < 600:
+        return status
+    return 502
+
+
+def _google_api_error_detail(exc):
+    try:
+        import json
+
+        payload = json.loads(exc.content.decode("utf-8"))
+    except Exception:
+        return "YouTube API request failed"
+
+    error = payload.get("error", {})
+    message = error.get("message") or "YouTube API request failed"
+    reason = ""
+    errors = error.get("errors")
+    if isinstance(errors, list) and errors:
+        reason = errors[0].get("reason") or ""
+
+    if reason:
+        return "YouTube API error (%s): %s" % (reason, message)
+    return "YouTube API error: %s" % message
