@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: briana-festival-playlist-api
+    runtime: python
+    plan: free
+    region: singapore
+    branch: deploy/first-festival-playlist
+    buildCommand: cd festival-playlist-web/backend && pip install -r requirements.txt
+    startCommand: cd festival-playlist-web/backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: FRONTEND_ORIGINS
+        fromService:
+          name: briana-festival-playlist-web
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: OPENAI_VISION_MODEL
+        value: gpt-4.1-mini
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: YOUTUBE_REDIRECT_URI
+        value: https://briana-festival-playlist-api.onrender.com/api/youtube/callback
+      - key: YOUTUBE_TOKEN_TTL_SECONDS
+        value: "3600"
+      - key: YOUTUBE_STATE_TTL_SECONDS
+        value: "600"
+
+  - type: web
+    name: briana-festival-playlist-web
+    runtime: static
+    branch: deploy/first-festival-playlist
+    buildCommand: cd festival-playlist-web/frontend && npm ci && npm run build
+    staticPublishPath: festival-playlist-web/frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          name: briana-festival-playlist-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
