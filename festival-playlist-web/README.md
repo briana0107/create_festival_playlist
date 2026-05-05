@@ -1,6 +1,6 @@
 # Festival Playlist Web
 
-페스티벌 포스터 이미지, CSV, 줄바꿈 텍스트에서 라인업을 만들고 검수한 뒤 YouTube 검색 결과를 검수하여 플레이리스트를 생성하는 MVP 웹앱입니다.
+페스티벌 포스터 이미지, CSV, 줄바꿈 텍스트에서 라인업을 만들고 검수한 뒤 아티스트별 YouTube 영상 후보를 검수하여 플레이리스트를 생성하는 MVP 웹앱입니다.
 
 ## Architecture
 
@@ -43,7 +43,7 @@ http://localhost:8000/api/youtube/callback
 ```
 
 7. 생성된 `Client ID`, `Client Secret`을 `backend/.env`에 넣습니다.
-8. YouTube 검색을 OAuth 전에 수행하려면 YouTube Data API용 API Key를 만들고 `YOUTUBE_API_KEY`에 넣습니다. 프론트의 Video Review 화면에서 요청 단위 API Key를 입력하는 방식도 지원합니다.
+8. YouTube 검색을 OAuth 전에 수행하려면 YouTube Data API용 API Key를 만들고 `YOUTUBE_API_KEY`에 넣습니다.
 
 ## Backend Run
 
@@ -89,12 +89,7 @@ http://localhost:5173
 
 OpenAI API Key는 Backend `.env`의 `OPENAI_API_KEY`에 넣습니다. 프론트엔드는 OpenAI API Key를 입력받거나 저장하지 않습니다.
 
-YouTube 검색 API Key는 두 가지 방식 중 하나를 사용합니다.
-
-- Backend `.env`의 `YOUTUBE_API_KEY`
-- Video Review 화면의 `YouTube Search API Key` 입력값
-
-두 번째 방식도 브라우저 state와 요청 헤더에서만 사용하며 `localStorage`에 저장하지 않습니다.
+YouTube 검색 API Key는 Backend `.env`의 `YOUTUBE_API_KEY`에 넣습니다. 프론트엔드는 YouTube 검색 API Key를 입력받거나 저장하지 않습니다. 영상 검색은 승인된 아티스트마다 `official music video` 기준으로 최대 20개 후보를 가져오고, 검수 화면에서 아티스트 탭별로 사용할 영상을 선택합니다.
 
 ## Data Retention Model
 
@@ -149,7 +144,6 @@ Body:
 Header optional:
 
 ```text
-X-YouTube-API-Key: {YOUTUBE_API_KEY}
 X-Session-Id: {YOUTUBE_OAUTH_SESSION_ID}
 ```
 

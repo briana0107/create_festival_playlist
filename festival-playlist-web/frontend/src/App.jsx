@@ -51,14 +51,13 @@ export default function App() {
     { label: "생성 대상", value: approvedVideoCount },
   ];
 
-  async function handleSearchVideos(youtubeApiKey) {
+  async function handleSearchVideos() {
     setBusy(true);
     setError("");
     try {
       const response = await searchYouTube({
         festivalName,
         items: lineupItems.filter((item) => item.approved && item.artist_name?.trim()),
-        youtubeApiKey,
         sessionId: youtubeSessionId,
       });
       setVideoItems(response.items);

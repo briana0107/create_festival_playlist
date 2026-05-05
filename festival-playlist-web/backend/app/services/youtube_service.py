@@ -31,6 +31,7 @@ BAD_KEYWORDS = [
     "fanmade",
 ]
 GOOD_KEYWORDS = ["official", "live", "festival", "mv", "music video", "performance"]
+SEARCH_RESULTS_PER_ARTIST = 20
 
 
 def build_auth_url():
@@ -59,12 +60,12 @@ def handle_oauth_callback(authorization_response):
     return session_id
 
 
-def search_videos_for_lineup(lineup_items, festival_name, youtube_api_key, session_id):
+def search_videos_for_lineup(lineup_items, festival_name, session_id):
     approved_items = [item for item in lineup_items if item.get("approved", True)]
     if not approved_items:
         raise ValueError("No approved artists to search")
 
-    service = _youtube_search_service(youtube_api_key, session_id)
+    service = _youtube_search_service(session_id)
     results = []
 
     for item in approved_items:
@@ -74,8 +75,8 @@ def search_videos_for_lineup(lineup_items, festival_name, youtube_api_key, sessi
 
         query = _build_search_query(artist_name, festival_name)
         candidates = _search_candidates(service, query)
-        selected = _select_candidate(artist_name, query, candidates)
-        results.append(selected)
+        selected = _select_candidates(artist_name, query, candidates)
+        results.extend(selected)
 
     return results
 
@@ -131,8 +132,8 @@ def create_playlist_with_videos(session_id, playlist_name, privacy, videos):
     }
 
 
-def _youtube_search_service(youtube_api_key, session_id):
-    api_key = youtube_api_key or os.getenv("YOUTUBE_API_KEY")
+def _youtube_search_service(session_id):
+    api_key = os.getenv("YOUTUBE_API_KEY")
     if api_key:
         return build("youtube", "v3", developerKey=api_key, cache_discovery=False)
 
@@ -162,7 +163,7 @@ def _search_candidates(service, query):
         part="snippet",
         q=query,
         type="video",
-        maxResults=8,
+        maxResults=SEARCH_RESULTS_PER_ARTIST,
         safeSearch="none",
         videoEmbeddable="true",
     ).execute()
@@ -209,8 +210,9 @@ def _video_durations(service, video_ids):
     return durations
 
 
-def _select_candidate(artist_name, query, candidates):
+def _select_candidates(artist_name, query, candidates):
     scored = []
+    seen_video_ids = set()
     for candidate in candidates:
         reason_parts = []
         title = candidate["video_title"]
@@ -236,52 +238,58 @@ def _select_candidate(artist_name, query, candidates):
             score += 2
             reason_parts.append("official channel")
 
-        scored.append((score, candidate, reason_parts))
+        video_id = candidate.get("video_id")
+        if video_id and video_id not in seen_video_ids:
+            seen_video_ids.add(video_id)
+            scored.append((score, candidate, reason_parts))
 
     if scored:
         scored.sort(key=lambda value: value[0], reverse=True)
-        score, candidate, reason_parts = scored[0]
-        return {
-            "artist_name": artist_name,
-            "search_query": query,
-            "video_id": candidate["video_id"],
-            "video_title": candidate["video_title"],
-            "channel_title": candidate["channel_title"],
-            "video_url": candidate["video_url"],
-            "reason": ", ".join(reason_parts) if reason_parts else "best available match",
-            "approved": score >= 4,
-        }
+        return [
+            {
+                "artist_name": artist_name,
+                "search_query": query,
+                "video_id": candidate["video_id"],
+                "video_title": candidate["video_title"],
+                "channel_title": candidate["channel_title"],
+                "video_url": candidate["video_url"],
+                "reason": ", ".join(reason_parts) if reason_parts else "search candidate",
+                "approved": score >= 4,
+            }
+            for score, candidate, reason_parts in scored[:SEARCH_RESULTS_PER_ARTIST]
+        ]
 
     fallback = candidates[0] if candidates else None
     if fallback:
-        return {
+        return [
+            {
+                "artist_name": artist_name,
+                "search_query": query,
+                "video_id": fallback["video_id"],
+                "video_title": fallback["video_title"],
+                "channel_title": fallback["channel_title"],
+                "video_url": fallback["video_url"],
+                "reason": "fallback candidate; review manually",
+                "approved": False,
+            }
+        ]
+
+    return [
+        {
             "artist_name": artist_name,
             "search_query": query,
-            "video_id": fallback["video_id"],
-            "video_title": fallback["video_title"],
-            "channel_title": fallback["channel_title"],
-            "video_url": fallback["video_url"],
-            "reason": "fallback candidate; review manually",
+            "video_id": "",
+            "video_title": "",
+            "channel_title": "",
+            "video_url": "",
+            "reason": "no candidate found",
             "approved": False,
         }
-
-    return {
-        "artist_name": artist_name,
-        "search_query": query,
-        "video_id": "",
-        "video_title": "",
-        "channel_title": "",
-        "video_url": "",
-        "reason": "no candidate found",
-        "approved": False,
-    }
+    ]
 
 
-def _build_search_query(artist_name, festival_name):
-    parts = [artist_name, "official", "live", "festival"]
-    if festival_name:
-        parts.append(str(festival_name).strip())
-    return " ".join([part for part in parts if part])
+def _build_search_query(artist_name, _festival_name):
+    return "%s official music video" % artist_name
 
 
 def _is_bad_candidate(normalized, duration_seconds):
@@ -335,4 +343,3 @@ def _extract_state(authorization_response):
     if not match:
         raise ValueError("OAuth state is missing")
     return match.group(1)
-

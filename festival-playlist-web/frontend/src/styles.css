@@ -391,10 +391,62 @@ textarea:focus {
   min-width: 150px;
 }
 
+.artist-tabs {
+  margin: 0 0 14px;
+  padding-bottom: 2px;
+}
+
+.artist-tab {
+  justify-content: space-between;
+  min-width: 190px;
+  max-width: 260px;
+  gap: 12px;
+}
+
+.artist-name {
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.artist-count {
+  border-radius: 999px;
+  background: #eef1ee;
+  color: var(--blue);
+  padding: 4px 8px;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
 .tab.active {
   border-color: rgba(18, 103, 83, 0.34);
   background: var(--surface-soft);
   color: var(--green-dark);
+}
+
+.tab.active .artist-count {
+  background: var(--green);
+  color: #fff;
+}
+
+.artist-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.artist-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.artist-panel-header h3 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: 0;
 }
 
 .input-stack {
@@ -515,6 +567,10 @@ textarea:focus {
 
 .video-table {
   min-width: 1320px;
+}
+
+.compact-video-table {
+  min-width: 1040px;
 }
 
 .data-table th,

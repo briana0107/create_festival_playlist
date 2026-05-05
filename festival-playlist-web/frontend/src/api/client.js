@@ -30,9 +30,8 @@ export async function loadManualText({ text }) {
   });
 }
 
-export async function searchYouTube({ festivalName, items, youtubeApiKey, sessionId }) {
+export async function searchYouTube({ festivalName, items, sessionId }) {
   const headers = jsonHeaders();
-  if (youtubeApiKey) headers["X-YouTube-API-Key"] = youtubeApiKey;
   if (sessionId) headers["X-Session-Id"] = sessionId;
 
   return requestJson("/api/youtube/search", {

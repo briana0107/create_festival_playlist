@@ -25,7 +25,6 @@ async def search(request: Request):
     if not isinstance(payload, dict):
         raise HTTPException(status_code=400, detail="JSON object body is required")
 
-    youtube_api_key = request.headers.get("X-YouTube-API-Key") or None
     session_id = request.headers.get("X-Session-Id") or payload.get("session_id")
     lineup_items = payload.get("items")
     festival_name = payload.get("festival_name")
@@ -34,7 +33,7 @@ async def search(request: Request):
         raise HTTPException(status_code=400, detail="items must be a list")
 
     try:
-        videos = search_videos_for_lineup(lineup_items, festival_name, youtube_api_key, session_id)
+        videos = search_videos_for_lineup(lineup_items, festival_name, session_id)
         logger.info("YouTube search completed for %s lineup items", len(lineup_items))
         return {"items": videos}
     except ValueError as exc:

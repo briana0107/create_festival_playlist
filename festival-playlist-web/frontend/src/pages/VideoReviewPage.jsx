@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCheck, CircleSlash2, Search } from "lucide-react";
 
-import ApiKeyInput from "../components/ApiKeyInput.jsx";
 import VideoResultTable from "../components/VideoResultTable.jsx";
 
 export default function VideoReviewPage({
@@ -13,12 +12,47 @@ export default function VideoReviewPage({
   busy,
   canContinue,
 }) {
-  const [youtubeApiKey, setYoutubeApiKey] = useState("");
   const approvedCount = items.filter((item) => item.approved).length;
   const usableCount = items.filter((item) => item.approved && item.video_id).length;
+  const artistGroups = useMemo(() => groupVideosByArtist(items), [items]);
+  const [activeArtist, setActiveArtist] = useState("");
+  const activeGroup =
+    artistGroups.find((group) => group.artistName === activeArtist) || artistGroups[0] || null;
+
+  useEffect(() => {
+    if (!artistGroups.length) {
+      setActiveArtist("");
+      return;
+    }
+    if (!artistGroups.some((group) => group.artistName === activeArtist)) {
+      setActiveArtist(artistGroups[0].artistName);
+    }
+  }, [activeArtist, artistGroups]);
 
   function setApproval(approved) {
     setItems(items.map((item) => ({ ...item, approved })));
+  }
+
+  function updateActiveGroup(nextGroupItems) {
+    if (!activeGroup) return;
+
+    const activeIndexes = new Set(activeGroup.items.map((entry) => entry.index));
+    let nextItemIndex = 0;
+    const nextItems = [];
+
+    items.forEach((item, index) => {
+      if (!activeIndexes.has(index)) {
+        nextItems.push(item);
+        return;
+      }
+
+      if (nextItemIndex < nextGroupItems.length) {
+        nextItems.push(nextGroupItems[nextItemIndex]);
+        nextItemIndex += 1;
+      }
+    });
+
+    setItems(nextItems);
   }
 
   return (
@@ -43,16 +77,10 @@ export default function VideoReviewPage({
       </div>
 
       <div className="search-row">
-        <ApiKeyInput
-          label="YouTube 검색 API 키"
-          value={youtubeApiKey}
-          onChange={setYoutubeApiKey}
-          placeholder="백엔드에 YOUTUBE_API_KEY가 있으면 비워둘 수 있습니다"
-        />
         <button
           className="primary-button"
           type="button"
-          onClick={() => onSearch(youtubeApiKey.trim())}
+          onClick={onSearch}
           disabled={busy}
         >
           <Search size={18} aria-hidden="true" />
@@ -60,7 +88,45 @@ export default function VideoReviewPage({
         </button>
       </div>
 
-      <VideoResultTable items={items} onChange={setItems} />
+      {artistGroups.length ? (
+        <div className="tabs artist-tabs" role="tablist" aria-label="Artist video groups">
+          {artistGroups.map((group) => (
+            <button
+              key={group.artistName}
+              className={`tab artist-tab ${group.artistName === activeGroup?.artistName ? "active" : ""}`}
+              type="button"
+              onClick={() => setActiveArtist(group.artistName)}
+              role="tab"
+              aria-selected={group.artistName === activeGroup?.artistName}
+            >
+              <span className="artist-name">{group.artistName}</span>
+              <span className="artist-count">
+                {group.approvedCount}/{group.items.length}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {activeGroup ? (
+        <div className="artist-panel">
+          <div className="artist-panel-header">
+            <div>
+              <p className="eyebrow">Artist</p>
+              <h3>{activeGroup.artistName}</h3>
+            </div>
+            <span className="status-pill">{activeGroup.items.length}개 후보</span>
+          </div>
+          <VideoResultTable
+            items={activeGroup.items.map((entry) => entry.item)}
+            onChange={updateActiveGroup}
+            showArtist={false}
+            showSearchQuery={false}
+          />
+        </div>
+      ) : (
+        <VideoResultTable items={[]} onChange={setItems} />
+      )}
 
       <div className="action-row">
         <button className="secondary-button" type="button" onClick={onBack}>
@@ -74,4 +140,27 @@ export default function VideoReviewPage({
       </div>
     </section>
   );
+}
+
+function groupVideosByArtist(items) {
+  const groupsByArtist = new Map();
+
+  items.forEach((item, index) => {
+    const artistName = String(item.artist_name || "이름 없음").trim() || "이름 없음";
+    if (!groupsByArtist.has(artistName)) {
+      groupsByArtist.set(artistName, {
+        artistName,
+        items: [],
+        approvedCount: 0,
+      });
+    }
+
+    const group = groupsByArtist.get(artistName);
+    group.items.push({ item, index });
+    if (item.approved && item.video_id) {
+      group.approvedCount += 1;
+    }
+  });
+
+  return Array.from(groupsByArtist.values());
 }

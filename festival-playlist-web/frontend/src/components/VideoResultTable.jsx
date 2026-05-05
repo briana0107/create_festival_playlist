@@ -1,6 +1,15 @@
 import { ExternalLink, Trash2 } from "lucide-react";
 
-export default function VideoResultTable({ items, onChange }) {
+export default function VideoResultTable({
+  items,
+  onChange,
+  showArtist = true,
+  showSearchQuery = true,
+}) {
+  const tableClassName = `data-table video-table ${
+    !showArtist && !showSearchQuery ? "compact-video-table" : ""
+  }`;
+
   function update(index, key, value) {
     const next = items.map((item, itemIndex) => {
       if (itemIndex !== index) return item;
@@ -23,12 +32,12 @@ export default function VideoResultTable({ items, onChange }) {
 
   return (
     <div className="table-wrap">
-      <table className="data-table video-table">
+      <table className={tableClassName}>
         <thead>
           <tr>
             <th>미리보기</th>
-            <th>아티스트</th>
-            <th>검색어</th>
+            {showArtist ? <th>아티스트</th> : null}
+            {showSearchQuery ? <th>검색어</th> : null}
             <th>Video ID</th>
             <th>제목</th>
             <th>채널</th>
@@ -53,16 +62,20 @@ export default function VideoResultTable({ items, onChange }) {
                   <span className="thumb-placeholder" />
                 )}
               </td>
-              <td>
-                <input
-                  className="strong-input"
-                  value={item.artist_name || ""}
-                  onChange={(event) => update(index, "artist_name", event.target.value)}
-                />
-              </td>
-              <td>
-                <input value={item.search_query || ""} onChange={(event) => update(index, "search_query", event.target.value)} />
-              </td>
+              {showArtist ? (
+                <td>
+                  <input
+                    className="strong-input"
+                    value={item.artist_name || ""}
+                    onChange={(event) => update(index, "artist_name", event.target.value)}
+                  />
+                </td>
+              ) : null}
+              {showSearchQuery ? (
+                <td>
+                  <input value={item.search_query || ""} onChange={(event) => update(index, "search_query", event.target.value)} />
+                </td>
+              ) : null}
               <td>
                 <input value={item.video_id || ""} onChange={(event) => update(index, "video_id", event.target.value)} />
               </td>
