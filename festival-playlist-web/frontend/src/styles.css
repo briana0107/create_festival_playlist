@@ -551,6 +551,20 @@ textarea:focus {
   font-weight: 800;
 }
 
+.playlist-preview span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.playlist-preview span strong {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 0;
+  font-size: 15px;
+}
+
 .table-wrap {
   width: 100%;
   overflow-x: auto;

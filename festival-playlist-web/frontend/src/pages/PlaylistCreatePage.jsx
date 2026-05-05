@@ -23,6 +23,10 @@ export default function PlaylistCreatePage({
     () => videos.filter((video) => video.approved && video.video_id),
     [videos],
   );
+  const approvedArtistSummary = useMemo(
+    () => summarizeApprovedArtists(approvedVideos),
+    [approvedVideos],
+  );
 
   useEffect(() => {
     if (!playlistNameTouched) {
@@ -138,10 +142,12 @@ export default function PlaylistCreatePage({
       </div>
 
       <div className="playlist-preview">
-        {approvedVideos.slice(0, 6).map((video) => (
-          <span key={`${video.video_id}-${video.artist_name}`}>{video.artist_name}</span>
+        {approvedArtistSummary.map((artist) => (
+          <span key={artist.name}>
+            <strong>{artist.count}</strong>
+            {artist.name}
+          </span>
         ))}
-        {approvedVideos.length > 6 ? <strong>+{approvedVideos.length - 6}</strong> : null}
       </div>
 
       <div className="action-row">
@@ -174,4 +180,15 @@ export default function PlaylistCreatePage({
       ) : null}
     </section>
   );
+}
+
+function summarizeApprovedArtists(videos) {
+  const summary = new Map();
+
+  videos.forEach((video) => {
+    const name = String(video.artist_name || "이름 없음").trim() || "이름 없음";
+    summary.set(name, (summary.get(name) || 0) + 1);
+  });
+
+  return Array.from(summary.entries()).map(([name, count]) => ({ name, count }));
 }
