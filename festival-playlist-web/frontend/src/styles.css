@@ -138,6 +138,8 @@ button:disabled {
 .url-cell,
 .result-box,
 .toolbar,
+.review-summary,
+.search-row,
 .playlist-preview {
   display: flex;
   align-items: center;
@@ -286,6 +288,41 @@ button:disabled {
   gap: 8px;
 }
 
+.review-summary {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.review-summary span {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfb;
+  color: var(--muted);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.review-summary strong {
+  margin-right: 6px;
+  color: var(--ink);
+}
+
+.search-row {
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search-row .field {
+  flex: 1 1 360px;
+}
+
+.search-row .primary-button {
+  min-width: 150px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
@@ -325,6 +362,11 @@ textarea {
   color: var(--ink);
   padding: 11px 12px;
   outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a09a;
 }
 
 textarea {
@@ -466,12 +508,13 @@ textarea:focus {
 
 .data-table {
   width: 100%;
-  min-width: 980px;
+  min-width: 920px;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .video-table {
-  min-width: 1540px;
+  min-width: 1320px;
 }
 
 .data-table th,
@@ -497,7 +540,7 @@ textarea:focus {
 }
 
 .data-table input {
-  min-width: 112px;
+  min-width: 0;
   padding: 8px 9px;
 }
 
@@ -629,12 +672,18 @@ textarea:focus {
     justify-content: flex-start;
   }
 
+  .search-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
   }
 
   .primary-button,
-  .secondary-button {
+  .secondary-button,
+  .search-row .primary-button {
     width: 100%;
   }
 

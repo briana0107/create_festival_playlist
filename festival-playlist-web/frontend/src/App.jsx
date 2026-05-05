@@ -9,10 +9,10 @@ import PlaylistCreatePage from "./pages/PlaylistCreatePage.jsx";
 import workflowImage from "./assets/festival-workflow.png";
 
 const STEPS = [
-  { id: "home", label: "Input", description: "라인업 입력", icon: UploadCloud },
-  { id: "lineup", label: "Lineup", description: "아티스트 검수", icon: ListChecks },
-  { id: "videos", label: "Videos", description: "영상 매칭", icon: Search },
-  { id: "playlist", label: "Playlist", description: "재생목록 생성", icon: Music2 },
+  { id: "home", label: "입력", description: "소스 선택", icon: UploadCloud },
+  { id: "lineup", label: "라인업", description: "아티스트 검수", icon: ListChecks },
+  { id: "videos", label: "영상", description: "후보 검수", icon: Search },
+  { id: "playlist", label: "생성", description: "YouTube 저장", icon: Music2 },
 ];
 
 export default function App() {
@@ -29,24 +29,26 @@ export default function App() {
     [step],
   );
 
-  const approvedLineupCount = lineupItems.filter((item) => item.approved).length;
+  const searchableLineupCount = lineupItems.filter(
+    (item) => item.approved && item.artist_name?.trim(),
+  ).length;
   const approvedVideoCount = videoItems.filter((item) => item.approved).length;
 
   const stepAvailability = useMemo(
     () => ({
       home: true,
       lineup: lineupItems.length > 0,
-      videos: approvedLineupCount > 0 || videoItems.length > 0,
+      videos: searchableLineupCount > 0 || videoItems.length > 0,
       playlist: approvedVideoCount > 0,
     }),
-    [approvedLineupCount, approvedVideoCount, lineupItems.length, videoItems.length],
+    [approvedVideoCount, lineupItems.length, searchableLineupCount, videoItems.length],
   );
 
   const stats = [
     { label: "라인업", value: lineupItems.length },
-    { label: "승인", value: approvedLineupCount },
+    { label: "검색 대상", value: searchableLineupCount },
     { label: "영상 후보", value: videoItems.length },
-    { label: "플레이리스트", value: approvedVideoCount },
+    { label: "생성 대상", value: approvedVideoCount },
   ];
 
   async function handleSearchVideos(youtubeApiKey) {
@@ -55,7 +57,7 @@ export default function App() {
     try {
       const response = await searchYouTube({
         festivalName,
-        items: lineupItems.filter((item) => item.approved),
+        items: lineupItems.filter((item) => item.approved && item.artist_name?.trim()),
         youtubeApiKey,
         sessionId: youtubeSessionId,
       });
@@ -85,7 +87,7 @@ export default function App() {
             <Music2 size={18} aria-hidden="true" />
             <span>Festival Playlist Studio</span>
           </div>
-          <h1>페스티벌 라인업을 검수 가능한 플레이리스트로 정리합니다</h1>
+          <h1>페스티벌 라인업을 YouTube 플레이리스트로 정리</h1>
           <div className="metrics" aria-label="Workflow summary">
             {stats.map((item) => (
               <span key={item.label}>
@@ -99,7 +101,7 @@ export default function App() {
           <img src={workflowImage} alt="" />
           <div className="visual-badge">
             <BadgeCheck size={16} />
-            <span>{approvedLineupCount} ready</span>
+            <span>{searchableLineupCount}명 준비</span>
           </div>
         </div>
       </header>

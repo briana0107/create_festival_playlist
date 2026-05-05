@@ -7,9 +7,9 @@ export default function ApiKeyInput({ label, value, onChange, placeholder }) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
+        aria-label={label}
         autoComplete="off"
       />
     </label>
   );
 }
-

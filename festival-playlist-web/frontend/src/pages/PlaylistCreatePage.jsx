@@ -12,6 +12,7 @@ export default function PlaylistCreatePage({
   onError,
 }) {
   const [playlistName, setPlaylistName] = useState("");
+  const [playlistNameTouched, setPlaylistNameTouched] = useState(false);
   const [privacy, setPrivacy] = useState("private");
   const [authenticated, setAuthenticated] = useState(false);
   const [busyAuth, setBusyAuth] = useState(false);
@@ -24,10 +25,10 @@ export default function PlaylistCreatePage({
   );
 
   useEffect(() => {
-    if (!playlistName) {
+    if (!playlistNameTouched) {
       setPlaylistName(`${festivalName || "Festival"} Playlist`);
     }
-  }, [festivalName, playlistName]);
+  }, [festivalName, playlistNameTouched]);
 
   useEffect(() => {
     if (!youtubeSessionId || authenticated) return undefined;
@@ -67,7 +68,12 @@ export default function PlaylistCreatePage({
 
   async function submitCreatePlaylist() {
     if (!youtubeSessionId || !authenticated) {
-      onError("YouTube OAuth connection is required");
+      onError("YouTube 연결이 필요합니다.");
+      return;
+    }
+
+    if (!playlistName.trim()) {
+      onError("플레이리스트 이름을 입력해 주세요.");
       return;
     }
 
@@ -96,20 +102,26 @@ export default function PlaylistCreatePage({
           <p className="eyebrow">Playlist Create</p>
           <h2>YouTube 플레이리스트 생성</h2>
         </div>
-        <span className="status-pill">{approvedVideos.length} videos</span>
+        <span className="status-pill">{approvedVideos.length}개 영상</span>
       </div>
 
       <div className="form-grid">
         <label className="field field-wide">
-          <span>playlist_name</span>
-          <input value={playlistName} onChange={(event) => setPlaylistName(event.target.value)} />
+          <span>플레이리스트 이름</span>
+          <input
+            value={playlistName}
+            onChange={(event) => {
+              setPlaylistNameTouched(true);
+              setPlaylistName(event.target.value);
+            }}
+          />
         </label>
         <label className="field">
-          <span>privacy</span>
+          <span>공개 범위</span>
           <select value={privacy} onChange={(event) => setPrivacy(event.target.value)}>
-            <option value="private">private</option>
-            <option value="unlisted">unlisted</option>
-            <option value="public">public</option>
+            <option value="private">비공개</option>
+            <option value="unlisted">일부 공개</option>
+            <option value="public">공개</option>
           </select>
         </label>
       </div>
@@ -117,11 +129,11 @@ export default function PlaylistCreatePage({
       <div className="oauth-row">
         <button className="secondary-button" type="button" onClick={connectYouTube} disabled={busyAuth}>
           <Music2 size={18} aria-hidden="true" />
-          <span>{busyAuth ? "Connecting" : "Connect YouTube"}</span>
+          <span>{busyAuth ? "연결 중" : "YouTube 연결"}</span>
         </button>
         <span className={`auth-state ${authenticated ? "ok" : ""}`}>
           {authenticated ? <CheckCircle2 size={16} aria-hidden="true" /> : <Link size={16} aria-hidden="true" />}
-          <span>{authenticated ? "connected" : "not connected"}</span>
+          <span>{authenticated ? "연결됨" : "연결 전"}</span>
         </span>
       </div>
 
@@ -135,29 +147,29 @@ export default function PlaylistCreatePage({
       <div className="action-row">
         <button className="secondary-button" type="button" onClick={onBack}>
           <ArrowLeft size={18} aria-hidden="true" />
-          <span>Back</span>
+          <span>이전</span>
         </button>
         <button
           className="primary-button"
           type="button"
           onClick={submitCreatePlaylist}
-          disabled={busyCreate || approvedVideos.length === 0}
+          disabled={busyCreate || approvedVideos.length === 0 || !authenticated || !playlistName.trim()}
         >
           <Music2 size={18} aria-hidden="true" />
-          <span>{busyCreate ? "Creating" : "Create Playlist"}</span>
+          <span>{busyCreate ? "생성 중" : "플레이리스트 생성"}</span>
         </button>
       </div>
 
       {result ? (
         <div className="result-box">
           <div>
-            <p className="eyebrow">playlist_url</p>
+            <p className="eyebrow">Playlist URL</p>
             <a href={result.playlist_url} target="_blank" rel="noreferrer">
               {result.playlist_url}
               <ExternalLink size={16} aria-hidden="true" />
             </a>
           </div>
-          <span>{result.added_count} added</span>
+          <span>{result.added_count}개 추가</span>
         </div>
       ) : null}
     </section>

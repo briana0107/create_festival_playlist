@@ -1,7 +1,7 @@
 export default function ManualArtistInput({ value, onChange }) {
   return (
     <label className="field field-wide">
-      <span>Artist names</span>
+      <span>아티스트 이름</span>
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}

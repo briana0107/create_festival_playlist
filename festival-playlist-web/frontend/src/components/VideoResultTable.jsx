@@ -18,7 +18,7 @@ export default function VideoResultTable({ items, onChange }) {
   }
 
   if (!items.length) {
-    return <div className="empty-state">No video results</div>;
+    return <div className="empty-state">아직 영상 후보가 없습니다.</div>;
   }
 
   return (
@@ -26,15 +26,15 @@ export default function VideoResultTable({ items, onChange }) {
       <table className="data-table video-table">
         <thead>
           <tr>
-            <th>Preview</th>
-            <th>Artist</th>
-            <th>Search</th>
+            <th>미리보기</th>
+            <th>아티스트</th>
+            <th>검색어</th>
             <th>Video ID</th>
-            <th>Title</th>
-            <th>Channel</th>
+            <th>제목</th>
+            <th>채널</th>
             <th>URL</th>
-            <th>Reason</th>
-            <th>Use</th>
+            <th>선택 이유</th>
+            <th>사용</th>
             <th></th>
           </tr>
         </thead>
@@ -90,10 +90,11 @@ export default function VideoResultTable({ items, onChange }) {
                   type="checkbox"
                   checked={Boolean(item.approved)}
                   onChange={(event) => update(index, "approved", event.target.checked)}
+                  aria-label={`${item.artist_name || "영상"} 사용 여부`}
                 />
               </td>
               <td>
-                <button className="icon-button danger" type="button" onClick={() => remove(index)} title="Remove row">
+                <button className="icon-button danger" type="button" onClick={() => remove(index)} title="행 삭제">
                   <Trash2 size={16} aria-hidden="true" />
                 </button>
               </td>

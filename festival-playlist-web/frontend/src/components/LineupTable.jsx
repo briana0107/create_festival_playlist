@@ -1,13 +1,13 @@
 import { Trash2 } from "lucide-react";
 
 const COLUMNS = [
-  "Date",
-  "Day",
-  "Artist",
-  "Stage",
-  "Start",
-  "Confidence",
-  "Use",
+  "날짜",
+  "일차",
+  "아티스트",
+  "스테이지",
+  "시작",
+  "신뢰도",
+  "사용",
   "",
 ];
 
@@ -21,7 +21,7 @@ export default function LineupTable({ items, onChange }) {
   }
 
   if (!items.length) {
-    return <div className="empty-state">No lineup items</div>;
+    return <div className="empty-state">아직 라인업이 없습니다.</div>;
   }
 
   return (
@@ -55,7 +55,7 @@ export default function LineupTable({ items, onChange }) {
                   className="strong-input"
                   value={item.artist_name || ""}
                   onChange={(event) => update(index, "artist_name", event.target.value)}
-                  placeholder="Artist"
+                  placeholder="아티스트"
                 />
               </td>
               <td>
@@ -83,10 +83,11 @@ export default function LineupTable({ items, onChange }) {
                   type="checkbox"
                   checked={Boolean(item.approved)}
                   onChange={(event) => update(index, "approved", event.target.checked)}
+                  aria-label={`${item.artist_name || "라인업"} 사용 여부`}
                 />
               </td>
               <td>
-                <button className="icon-button danger" type="button" onClick={() => remove(index)} title="Remove row">
+                <button className="icon-button danger" type="button" onClick={() => remove(index)} title="행 삭제">
                   <Trash2 size={16} aria-hidden="true" />
                 </button>
               </td>
