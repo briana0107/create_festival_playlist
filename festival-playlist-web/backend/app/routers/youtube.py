@@ -1,8 +1,11 @@
 import logging
+import threading
+import time
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
+from app.services.playlist_job_store import create_job, get_job, update_job
 from app.services.youtube_service import (
     build_auth_url,
     create_playlist_with_videos,
@@ -112,14 +115,53 @@ async def create_playlist(request: Request):
     if not isinstance(videos, list):
         raise HTTPException(status_code=400, detail="videos must be a list")
 
+    approved_count = len([video for video in videos if video.get("approved") and video.get("video_id")])
+    if approved_count == 0:
+        raise HTTPException(status_code=400, detail="No approved videos to add")
+
+    job = create_job(approved_count)
+    thread = threading.Thread(
+        target=_run_create_playlist_job,
+        args=(job["job_id"], session_id, playlist_name, privacy, videos),
+        daemon=True,
+    )
+    thread.start()
+    return JSONResponse(status_code=202, content=job)
+
+
+@router.get("/create-playlist-status")
+async def create_playlist_status(request: Request):
+    job_id = request.query_params.get("job_id")
+    if not job_id:
+        raise HTTPException(status_code=400, detail="job_id is required")
+
+    job = get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Playlist creation job not found")
+    return job
+
+
+def _run_create_playlist_job(job_id, session_id, playlist_name, privacy, videos):
+    update_job(job_id, status="running", started_at=time.time())
+
+    def update_progress(progress):
+        update_job(job_id, **progress)
+
     try:
-        result = create_playlist_with_videos(session_id, playlist_name, privacy, videos)
+        result = create_playlist_with_videos(
+            session_id,
+            playlist_name,
+            privacy,
+            videos,
+            progress_callback=update_progress,
+        )
+        update_job(job_id, status="completed", completed_at=time.time(), **result)
         logger.info("Playlist created with %s added videos", result.get("added_count"))
-        return result
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-    except PermissionError as exc:
-        raise HTTPException(status_code=401, detail=str(exc))
-    except Exception:
+    except Exception as exc:
         logger.exception("Playlist creation failed")
-        raise HTTPException(status_code=502, detail="Playlist creation failed")
+        update_job(
+            job_id,
+            status="failed",
+            completed_at=time.time(),
+            error=str(exc) or "Playlist creation failed",
+        )

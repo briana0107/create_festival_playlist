@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, ExternalLink, Link, Music2 } from "lucide-react";
 
-import { createPlaylist, getYouTubeAuthUrl, getYouTubeStatus } from "../api/client.js";
+import {
+  createPlaylist,
+  getCreatePlaylistStatus,
+  getYouTubeAuthUrl,
+  getYouTubeStatus,
+} from "../api/client.js";
 
 export default function PlaylistCreatePage({
   festivalName,
@@ -20,6 +25,8 @@ export default function PlaylistCreatePage({
   const [createStartedAt, setCreateStartedAt] = useState(null);
   const [createElapsedSeconds, setCreateElapsedSeconds] = useState(0);
   const [lastCreateDurationSeconds, setLastCreateDurationSeconds] = useState(null);
+  const [createJobId, setCreateJobId] = useState("");
+  const [createProgress, setCreateProgress] = useState(null);
   const [result, setResult] = useState(null);
 
   const approvedVideos = useMemo(
@@ -71,6 +78,43 @@ export default function PlaylistCreatePage({
     return () => clearInterval(timer);
   }, [busyCreate, createStartedAt]);
 
+  useEffect(() => {
+    if (!busyCreate || !createJobId) return undefined;
+
+    let stopped = false;
+    async function pollStatus() {
+      try {
+        const status = await getCreatePlaylistStatus(createJobId);
+        if (stopped) return;
+        setCreateProgress(status);
+
+        if (status.status === "completed") {
+          setResult(status);
+          setLastCreateDurationSeconds(status.elapsed_seconds);
+          setBusyCreate(false);
+          setCreateStartedAt(null);
+          setCreateJobId("");
+        }
+
+        if (status.status === "failed") {
+          onError(status.error || "플레이리스트 생성에 실패했습니다.");
+          setBusyCreate(false);
+          setCreateStartedAt(null);
+          setCreateJobId("");
+        }
+      } catch (err) {
+        if (!stopped) onError(err.message);
+      }
+    }
+
+    pollStatus();
+    const timer = setInterval(pollStatus, 2000);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [busyCreate, createJobId, onError]);
+
   async function connectYouTube() {
     setBusyAuth(true);
     onError("");
@@ -100,21 +144,28 @@ export default function PlaylistCreatePage({
     setCreateStartedAt(startedAt);
     setCreateElapsedSeconds(0);
     setLastCreateDurationSeconds(null);
+    setCreateJobId("");
+    setCreateProgress({
+      status: "queued",
+      total_count: approvedVideos.length,
+      processed_count: 0,
+      added_count: 0,
+      failed_count: 0,
+    });
     setBusyCreate(true);
     setResult(null);
     onError("");
     try {
-      const response = await createPlaylist({
+      const job = await createPlaylist({
         sessionId: youtubeSessionId,
         playlistName,
         privacy,
         videos: approvedVideos,
       });
-      setResult(response);
-      setLastCreateDurationSeconds(Math.floor((Date.now() - startedAt) / 1000));
+      setCreateJobId(job.job_id);
+      setCreateProgress(job);
     } catch (err) {
       onError(err.message);
-    } finally {
       setBusyCreate(false);
       setCreateStartedAt(null);
     }
@@ -161,7 +212,9 @@ export default function PlaylistCreatePage({
           <span>{authenticated ? "연결됨" : "연결 전"}</span>
         </span>
         {busyCreate ? (
-          <span className="status-pill">{formatElapsed(createElapsedSeconds)} 경과</span>
+          <span className="status-pill">
+            {formatProgress(createProgress)} · {formatElapsed(createElapsedSeconds)} 경과
+          </span>
         ) : null}
       </div>
 
@@ -224,4 +277,13 @@ function formatElapsed(totalSeconds) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function formatProgress(progress) {
+  if (!progress) return "준비 중";
+  const processed = Number(progress.processed_count || 0);
+  const total = Number(progress.total_count || 0);
+  const added = Number(progress.added_count || 0);
+  if (!total) return "준비 중";
+  return `${processed}/${total} 처리 · ${added}개 추가`;
 }

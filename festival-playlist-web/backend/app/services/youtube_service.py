@@ -83,7 +83,7 @@ def search_videos_for_lineup(lineup_items, festival_name, session_id):
     return results
 
 
-def create_playlist_with_videos(session_id, playlist_name, privacy, videos):
+def create_playlist_with_videos(session_id, playlist_name, privacy, videos, progress_callback=None):
     service = _youtube_oauth_service(session_id)
     approved_videos = [video for video in videos if video.get("approved") and video.get("video_id")]
 
@@ -102,8 +102,20 @@ def create_playlist_with_videos(session_id, playlist_name, privacy, videos):
     ).execute()
 
     playlist_id = playlist_response["id"]
+    playlist_url = "https://www.youtube.com/playlist?list=%s" % playlist_id
     added = []
     failed = []
+
+    if progress_callback:
+        progress_callback(
+            {
+                "playlist_id": playlist_id,
+                "playlist_url": playlist_url,
+                "processed_count": 0,
+                "added_count": 0,
+                "failed_count": 0,
+            }
+        )
 
     for video in approved_videos:
         video_id = video.get("video_id")
@@ -124,10 +136,20 @@ def create_playlist_with_videos(session_id, playlist_name, privacy, videos):
         except Exception as exc:
             logger.warning("Failed to add video to playlist: %s", video_id)
             failed.append({"video_id": video_id, "reason": str(exc)})
+        finally:
+            if progress_callback:
+                progress_callback(
+                    {
+                        "processed_count": len(added) + len(failed),
+                        "added_count": len(added),
+                        "failed_count": len(failed),
+                        "failed": failed,
+                    }
+                )
 
     return {
         "playlist_id": playlist_id,
-        "playlist_url": "https://www.youtube.com/playlist?list=%s" % playlist_id,
+        "playlist_url": playlist_url,
         "added_count": len(added),
         "failed_count": len(failed),
         "failed": failed,

@@ -74,6 +74,13 @@ export async function createPlaylist({ sessionId, playlistName, privacy, videos 
   });
 }
 
+export async function getCreatePlaylistStatus(jobId) {
+  const query = new URLSearchParams({ job_id: jobId });
+  return requestJson(`/api/youtube/create-playlist-status?${query.toString()}`, {
+    method: "GET",
+  });
+}
+
 async function requestJson(path, options) {
   const response = await fetch(`${API_BASE_URL}${path}`, options);
   let data = null;
