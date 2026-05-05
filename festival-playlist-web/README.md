@@ -60,6 +60,7 @@ uvicorn app.main:app --reload --port 8000
 
 ```bash
 FRONTEND_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+OPENAI_API_KEY=
 OPENAI_VISION_MODEL=gpt-4.1-mini
 YOUTUBE_API_KEY=
 GOOGLE_CLIENT_ID=your-google-client-id
@@ -86,7 +87,7 @@ http://localhost:5173
 
 ## API Key Input
 
-OpenAI API Key는 Poster Upload 탭에서 입력합니다. 프론트엔드는 이 값을 React state에만 들고 있고, 포스터 추출 요청의 `Authorization` 헤더로 한 번 전송합니다. 서버는 이 값을 로그에 남기거나 파일/DB/메모리 저장소에 저장하지 않습니다.
+OpenAI API Key는 Backend `.env`의 `OPENAI_API_KEY`에 넣거나 Poster Upload 탭에서 요청 단위로 입력합니다. 프론트엔드는 입력값을 React state에만 들고 있고, 포스터 추출 요청의 `Authorization` 헤더로 한 번 전송합니다. 서버는 이 값을 로그에 남기거나 파일/DB/메모리 저장소에 저장하지 않습니다.
 
 YouTube 검색 API Key는 두 가지 방식 중 하나를 사용합니다.
 

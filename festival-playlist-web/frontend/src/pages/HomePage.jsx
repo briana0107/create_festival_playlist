@@ -23,7 +23,6 @@ export default function HomePage({ festivalName, setFestivalName, onLineupLoaded
   const [busy, setBusy] = useState(false);
 
   async function submitPoster() {
-    if (!openAiApiKey.trim()) return onError("OpenAI API 키가 필요합니다.");
     if (!posterFile && !posterImageUrl.trim()) return onError("포스터 이미지 파일 또는 이미지 URL이 필요합니다.");
 
     await run(async () => {
@@ -108,9 +107,10 @@ export default function HomePage({ festivalName, setFestivalName, onLineupLoaded
       {activeTab === "poster" ? (
         <div className="input-stack">
           <ApiKeyInput
-            label="OpenAI API 키"
+            label="OpenAI API 키 (선택)"
             value={openAiApiKey}
             onChange={setOpenAiApiKey}
+            placeholder="서버 환경변수 사용 시 비워두기"
           />
           <label className="field field-wide">
             <span>포스터 이미지 URL</span>

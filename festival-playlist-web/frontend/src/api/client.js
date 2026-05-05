@@ -5,12 +5,12 @@ export async function extractPoster({ festivalName, openAiApiKey, file, imageUrl
   if (file) formData.append("file", file);
   if (imageUrl) formData.append("image_url", imageUrl);
   if (festivalName) formData.append("festival_name", festivalName);
+  const headers = {};
+  if (openAiApiKey) headers.Authorization = `Bearer ${openAiApiKey}`;
 
   return requestJson("/api/poster/extract", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${openAiApiKey}`,
-    },
+    headers,
     body: formData,
   });
 }

@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import APIRouter, HTTPException, Request
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 @router.post("/extract")
 async def extract_poster(request: Request):
     auth_header = request.headers.get("Authorization")
-    api_key = extract_bearer_token(auth_header)
+    api_key = extract_bearer_token(auth_header) or os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=401, detail="OpenAI API key is required")
 
