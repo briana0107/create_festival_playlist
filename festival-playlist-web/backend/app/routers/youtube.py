@@ -1,4 +1,5 @@
 import logging
+import re
 import threading
 import time
 
@@ -47,9 +48,12 @@ async def search(request: Request):
     except HttpError as exc:
         logger.exception("YouTube API search failed")
         raise HTTPException(status_code=_http_error_status(exc), detail=_google_api_error_detail(exc))
-    except Exception:
+    except Exception as exc:
         logger.exception("YouTube search failed")
-        raise HTTPException(status_code=502, detail="YouTube search failed")
+        raise HTTPException(
+            status_code=502,
+            detail="YouTube search failed: %s" % _safe_exception_detail(exc),
+        )
 
 
 @router.get("/auth-url")
@@ -198,3 +202,9 @@ def _google_api_error_detail(exc):
     if reason:
         return "YouTube API error (%s): %s" % (reason, message)
     return "YouTube API error: %s" % message
+
+
+def _safe_exception_detail(exc):
+    message = "%s: %s" % (exc.__class__.__name__, str(exc) or "unknown error")
+    message = re.sub(r"AIza[0-9A-Za-z_-]+", "AIza...", message)
+    return " ".join(message.split())[:300]
