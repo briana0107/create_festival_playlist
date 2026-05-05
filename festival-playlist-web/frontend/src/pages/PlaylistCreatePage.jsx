@@ -17,6 +17,9 @@ export default function PlaylistCreatePage({
   const [authenticated, setAuthenticated] = useState(false);
   const [busyAuth, setBusyAuth] = useState(false);
   const [busyCreate, setBusyCreate] = useState(false);
+  const [createStartedAt, setCreateStartedAt] = useState(null);
+  const [createElapsedSeconds, setCreateElapsedSeconds] = useState(0);
+  const [lastCreateDurationSeconds, setLastCreateDurationSeconds] = useState(null);
   const [result, setResult] = useState(null);
 
   const approvedVideos = useMemo(
@@ -56,6 +59,18 @@ export default function PlaylistCreatePage({
     };
   }, [youtubeSessionId, authenticated]);
 
+  useEffect(() => {
+    if (!busyCreate || !createStartedAt) return undefined;
+
+    const updateElapsed = () => {
+      setCreateElapsedSeconds(Math.floor((Date.now() - createStartedAt) / 1000));
+    };
+    updateElapsed();
+
+    const timer = setInterval(updateElapsed, 1000);
+    return () => clearInterval(timer);
+  }, [busyCreate, createStartedAt]);
+
   async function connectYouTube() {
     setBusyAuth(true);
     onError("");
@@ -81,6 +96,10 @@ export default function PlaylistCreatePage({
       return;
     }
 
+    const startedAt = Date.now();
+    setCreateStartedAt(startedAt);
+    setCreateElapsedSeconds(0);
+    setLastCreateDurationSeconds(null);
     setBusyCreate(true);
     setResult(null);
     onError("");
@@ -92,10 +111,12 @@ export default function PlaylistCreatePage({
         videos: approvedVideos,
       });
       setResult(response);
+      setLastCreateDurationSeconds(Math.floor((Date.now() - startedAt) / 1000));
     } catch (err) {
       onError(err.message);
     } finally {
       setBusyCreate(false);
+      setCreateStartedAt(null);
     }
   }
 
@@ -139,6 +160,9 @@ export default function PlaylistCreatePage({
           {authenticated ? <CheckCircle2 size={16} aria-hidden="true" /> : <Link size={16} aria-hidden="true" />}
           <span>{authenticated ? "연결됨" : "연결 전"}</span>
         </span>
+        {busyCreate ? (
+          <span className="status-pill">{formatElapsed(createElapsedSeconds)} 경과</span>
+        ) : null}
       </div>
 
       <div className="playlist-preview">
@@ -162,7 +186,7 @@ export default function PlaylistCreatePage({
           disabled={busyCreate || approvedVideos.length === 0 || !authenticated || !playlistName.trim()}
         >
           <Music2 size={18} aria-hidden="true" />
-          <span>{busyCreate ? "생성 중" : "플레이리스트 생성"}</span>
+          <span>{busyCreate ? `생성 중 ${formatElapsed(createElapsedSeconds)}` : "플레이리스트 생성"}</span>
         </button>
       </div>
 
@@ -175,7 +199,10 @@ export default function PlaylistCreatePage({
               <ExternalLink size={16} aria-hidden="true" />
             </a>
           </div>
-          <span>{result.added_count}개 추가</span>
+          <span>
+            {result.added_count}개 추가
+            {lastCreateDurationSeconds !== null ? ` · ${formatElapsed(lastCreateDurationSeconds)}` : ""}
+          </span>
         </div>
       ) : null}
     </section>
@@ -191,4 +218,10 @@ function summarizeApprovedArtists(videos) {
   });
 
   return Array.from(summary.entries()).map(([name, count]) => ({ name, count }));
+}
+
+function formatElapsed(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
