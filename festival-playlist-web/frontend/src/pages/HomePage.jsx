@@ -2,7 +2,6 @@ import { useState } from "react";
 import { FileSpreadsheet, ImageUp, ListPlus, Sparkles } from "lucide-react";
 
 import { extractPoster, loadCsv, loadManualText } from "../api/client.js";
-import ApiKeyInput from "../components/ApiKeyInput.jsx";
 import PosterUploader from "../components/PosterUploader.jsx";
 import CsvUploader from "../components/CsvUploader.jsx";
 import ManualArtistInput from "../components/ManualArtistInput.jsx";
@@ -15,7 +14,6 @@ const TABS = [
 
 export default function HomePage({ festivalName, setFestivalName, onLineupLoaded, onError }) {
   const [activeTab, setActiveTab] = useState("poster");
-  const [openAiApiKey, setOpenAiApiKey] = useState("");
   const [posterFile, setPosterFile] = useState(null);
   const [posterImageUrl, setPosterImageUrl] = useState("");
   const [csvFile, setCsvFile] = useState(null);
@@ -28,7 +26,6 @@ export default function HomePage({ festivalName, setFestivalName, onLineupLoaded
     await run(async () => {
       const response = await extractPoster({
         festivalName,
-        openAiApiKey: openAiApiKey.trim(),
         file: posterFile,
         imageUrl: posterImageUrl.trim(),
       });
@@ -106,12 +103,6 @@ export default function HomePage({ festivalName, setFestivalName, onLineupLoaded
 
       {activeTab === "poster" ? (
         <div className="input-stack">
-          <ApiKeyInput
-            label="OpenAI API 키 (선택)"
-            value={openAiApiKey}
-            onChange={setOpenAiApiKey}
-            placeholder="서버 환경변수 사용 시 비워두기"
-          />
           <label className="field field-wide">
             <span>포스터 이미지 URL</span>
             <input

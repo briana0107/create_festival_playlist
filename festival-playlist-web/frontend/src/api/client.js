@@ -1,16 +1,13 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-export async function extractPoster({ festivalName, openAiApiKey, file, imageUrl }) {
+export async function extractPoster({ festivalName, file, imageUrl }) {
   const formData = new FormData();
   if (file) formData.append("file", file);
   if (imageUrl) formData.append("image_url", imageUrl);
   if (festivalName) formData.append("festival_name", festivalName);
-  const headers = {};
-  if (openAiApiKey) headers.Authorization = `Bearer ${openAiApiKey}`;
 
   return requestJson("/api/poster/extract", {
     method: "POST",
-    headers,
     body: formData,
   });
 }

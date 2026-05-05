@@ -4,9 +4,9 @@
 
 ## Architecture
 
-Frontend는 React + Vite 단일 페이지 앱입니다. 화면은 `Home -> Lineup Review -> Video Search Review -> Playlist Create` 순서로 이동하며, OpenAI API Key와 선택 입력값은 브라우저 state에만 보관합니다. `localStorage`를 사용하지 않습니다.
+Frontend는 React + Vite 단일 페이지 앱입니다. 화면은 `Home -> Lineup Review -> Video Search Review -> Playlist Create` 순서로 이동하며, 요청 단위 선택 입력값은 브라우저 state에만 보관합니다. `localStorage`를 사용하지 않습니다.
 
-Backend는 FastAPI stateless API입니다. DB를 쓰지 않고, CSV/텍스트 파싱은 요청 단위로 처리합니다. 포스터 이미지는 디스크에 저장하지 않고 업로드 스트림을 메모리에서 읽은 뒤 닫습니다. OpenAI API Key는 `POST /api/poster/extract` 요청의 `Authorization: Bearer ...` 헤더에서만 읽고 저장하지 않습니다.
+Backend는 FastAPI stateless API입니다. DB를 쓰지 않고, CSV/텍스트 파싱은 요청 단위로 처리합니다. 포스터 이미지는 디스크에 저장하지 않고 업로드 스트림을 메모리에서 읽은 뒤 닫습니다. OpenAI API Key는 서버 환경변수 `OPENAI_API_KEY`에서 읽고 저장하지 않습니다.
 
 YouTube OAuth 토큰은 `backend/app/services/token_store.py`의 프로세스 메모리에만 TTL로 보관합니다. 서버 재시작 시 토큰과 OAuth state는 모두 삭제됩니다.
 
@@ -87,7 +87,7 @@ http://localhost:5173
 
 ## API Key Input
 
-OpenAI API Key는 Backend `.env`의 `OPENAI_API_KEY`에 넣거나 Poster Upload 탭에서 요청 단위로 입력합니다. 프론트엔드는 입력값을 React state에만 들고 있고, 포스터 추출 요청의 `Authorization` 헤더로 한 번 전송합니다. 서버는 이 값을 로그에 남기거나 파일/DB/메모리 저장소에 저장하지 않습니다.
+OpenAI API Key는 Backend `.env`의 `OPENAI_API_KEY`에 넣습니다. 프론트엔드는 OpenAI API Key를 입력받거나 저장하지 않습니다.
 
 YouTube 검색 API Key는 두 가지 방식 중 하나를 사용합니다.
 
@@ -110,7 +110,7 @@ YouTube 검색 API Key는 두 가지 방식 중 하나를 사용합니다.
 
 ### `POST /api/poster/extract`
 
-Header:
+OpenAI API Key는 Backend `.env`의 `OPENAI_API_KEY`를 사용합니다. 요청 단위로 다른 키를 써야 하는 경우에만 다음 header를 보낼 수 있습니다.
 
 ```text
 Authorization: Bearer {OPENAI_API_KEY}
