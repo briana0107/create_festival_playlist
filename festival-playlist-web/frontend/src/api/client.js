@@ -1,27 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-export async function extractPoster({ festivalName, file, imageUrl }) {
-  const formData = new FormData();
-  if (file) formData.append("file", file);
-  if (imageUrl) formData.append("image_url", imageUrl);
-  if (festivalName) formData.append("festival_name", festivalName);
-
-  return requestJson("/api/poster/extract", {
-    method: "POST",
-    body: formData,
-  });
-}
-
-export async function loadCsv({ file }) {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  return requestJson("/api/lineup/from-csv", {
-    method: "POST",
-    body: formData,
-  });
-}
-
 export async function loadManualText({ text }) {
   return requestJson("/api/lineup/from-text", {
     method: "POST",

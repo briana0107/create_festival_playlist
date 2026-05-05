@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from app.routers import lineup, poster, youtube
+from app.routers import lineup, youtube
 
 
 load_dotenv()
@@ -33,7 +33,6 @@ def create_app():
         allow_headers=["*"],
     )
 
-    app.include_router(poster.router, prefix="/api/poster", tags=["poster"])
     app.include_router(lineup.router, prefix="/api/lineup", tags=["lineup"])
     app.include_router(youtube.router, prefix="/api/youtube", tags=["youtube"])
 
